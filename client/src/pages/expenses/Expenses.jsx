@@ -10,7 +10,10 @@ const Expenses = () => {
   const [formData, setFormData] = useState({
     personName: '', expenseType: 'Food', amount: 0
   });
-  
+   // New States for the Custom Date Range!
+   const [customStartDate,setCustomStartDate]=useState('');
+    const [customEndDate,setCustomEndDate]=useState('');
+
 
   const fetchData = async () => {
     try {
@@ -47,6 +50,16 @@ const Expenses = () => {
    if(filter==="Monthly"){
     return expDate.getFullYear()===now.getFullYear() &&
     expDate.getMonth()===now.getMonth();
+   }
+   if(filter==="Custom")
+   {
+    // Check if they actually picked both start and end dates.If not, just don’t filter anything yet → show all data.
+    if(!customStartDate || !customEndDate) return true;
+    const start= new Date(customStartDate);
+    start.setHours(0,0,0,0);// Start at the beginning of the day
+    const end = new Date(customEndDate);
+    end.setHours(23,59,59,999)// Go until the very end of the day
+    return expDate >= start && expDate <= end;
    }
    return true; // Used when "All" is selected
   })
@@ -93,6 +106,10 @@ const Expenses = () => {
         filter={filter} 
         setFilter={setFilter} 
         totalAmount={totalAmount} 
+        customStartDate={customStartDate}
+        setCustomStartDate={setCustomStartDate}
+        customEndDate={customEndDate}
+        setCustomEndDate={setCustomEndDate}
       />
       <div className="card table-container">
         <table>

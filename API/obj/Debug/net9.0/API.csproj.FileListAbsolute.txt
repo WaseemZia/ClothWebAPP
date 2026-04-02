@@ -162,3 +162,4 @@ D:\HajiGulCloth\API\obj\Debug\net9.0\refint\API.dll
 D:\HajiGulCloth\API\obj\Debug\net9.0\API.pdb
 D:\HajiGulCloth\API\obj\Debug\net9.0\API.genruntimeconfig.cache
 D:\HajiGulCloth\API\obj\Debug\net9.0\ref\API.dll
+D:\HajiGulCloth\api\obj\Debug\net9.0\API.sourcelink.json
