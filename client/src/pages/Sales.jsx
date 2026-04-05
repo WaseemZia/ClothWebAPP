@@ -27,7 +27,12 @@ const Sales = () => {
     } catch (err) { console.error(err); }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    const load = async () => {
+      await fetchData();
+    };
+    load();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

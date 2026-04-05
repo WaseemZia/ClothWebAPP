@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\HajiGulCloth\\api\\API.csproj": {}
+    "D:\\HajiGulCloth\\API\\API.csproj": {}
   },
   "projects": {
-    "D:\\HajiGulCloth\\api\\API.csproj": {
+    "D:\\HajiGulCloth\\API\\API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\HajiGulCloth\\api\\API.csproj",
+        "projectUniqueName": "D:\\HajiGulCloth\\API\\API.csproj",
         "projectName": "API",
-        "projectPath": "D:\\HajiGulCloth\\api\\API.csproj",
+        "projectPath": "D:\\HajiGulCloth\\API\\API.csproj",
         "packagesPath": "C:\\Users\\hp\\.nuget\\packages\\",
-        "outputPath": "D:\\HajiGulCloth\\api\\obj\\",
+        "outputPath": "D:\\HajiGulCloth\\API\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -50,6 +50,18 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "dependencies": {
+            "BCrypt.Net-Next": {
+              "target": "Package",
+              "version": "[4.1.0, )"
+            },
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[9.0.0, )"
+            },
+            "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[9.0.0, )"
+            },
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
               "version": "[9.0.8, )"

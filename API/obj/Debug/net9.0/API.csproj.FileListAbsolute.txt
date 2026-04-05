@@ -163,3 +163,6 @@ D:\HajiGulCloth\API\obj\Debug\net9.0\API.pdb
 D:\HajiGulCloth\API\obj\Debug\net9.0\API.genruntimeconfig.cache
 D:\HajiGulCloth\API\obj\Debug\net9.0\ref\API.dll
 D:\HajiGulCloth\api\obj\Debug\net9.0\API.sourcelink.json
+D:\HajiGulCloth\API\bin\Debug\net9.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+D:\HajiGulCloth\API\bin\Debug\net9.0\BCrypt.Net-Next.dll
+D:\HajiGulCloth\api\bin\Debug\net9.0\Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll

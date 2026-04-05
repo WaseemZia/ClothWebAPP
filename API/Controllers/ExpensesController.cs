@@ -1,5 +1,6 @@
 using API.Data;
 using API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,7 +16,7 @@ namespace API.Controllers
         {
             _context = context;
         }
-
+[Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Expense>>> GetExpenses()
         {
