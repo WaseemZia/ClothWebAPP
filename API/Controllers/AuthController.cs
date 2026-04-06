@@ -43,7 +43,7 @@ namespace API.Controllers
                 await _roleManager.CreateAsync(new IdentityRole(registerModel.Role));
             }
             // set up new User
-            var user = new IdentityUser{UserName=registerModel.Password};
+            var user = new IdentityUser { UserName = registerModel.Username };
             var result= await _userManager.CreateAsync(user,registerModel.Password);
             if(!result.Succeeded) return BadRequest(result.Errors);
             //assign to role
@@ -56,7 +56,7 @@ namespace API.Controllers
         {
             // verify user 
             var user =await _userManager.FindByNameAsync(model.Username);
-            if(user==null || await _userManager.CheckPasswordAsync(user,model.Password))
+            if(user==null || !await _userManager.CheckPasswordAsync(user,model.Password))
             {
                 return Unauthorized("Invalid UserName or Password");
             }

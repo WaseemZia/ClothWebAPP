@@ -1,50 +1,90 @@
-import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Store, ShoppingCart, Receipt } from 'lucide-react';
+import { BrowserRouter as Router, Routes, Route, NavLink, useLocation, Navigate } from 'react-router-dom';
+import { LayoutDashboard, Store, ShoppingCart, Receipt, LogOut } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import Sales from './pages/Sales';
 import Expenses from './pages/expenses/Expenses';
+import Login from './login/Login';
+import Register from './login/Register';
+import ProtectedRoute from './components/ProtectedRoute';
+import { useContext } from 'react';
+import { AuthContext, AuthProvider } from './context/AuthContext';
 
-function App() {
+const AppContent = () => {
+  const location = useLocation();
+  const { isAuthenticated, role, logout } = useContext(AuthContext);
+
+  // If we are on the login or register page, hide the sidebar layout completely
+  if (location.pathname === '/login' || location.pathname === '/register') {
+    return (
+      <Routes>
+        <Route path='/login' element={<Login />} />
+        <Route path='/register' element={<Register />} />
+        <Route path='*' element={<Navigate to='/login' replace />} />
+      </Routes>
+    );
+  }
+
   return (
-    <Router>
-      <div className="app-container">
-        <aside className="sidebar">
-          <h2>
-            <Store size={28} />
-            HajiGulCloth
-          </h2>
+    <div className="app-container">
+      <aside className="sidebar">
+        <h2>
+          <Store size={28} />
+          HajiGulCloth
+        </h2>
+        {isAuthenticated && (
           <nav className="nav-links">
-            <NavLink to="/" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
-              <LayoutDashboard size={20} />
-              Dashboard
-            </NavLink>
-            <NavLink to="/inventory" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
-              <Store size={20} />
-              Inventory
-            </NavLink>
-            <NavLink to="/sales" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
+            {role === 'Admin' && (
+              <>
+                <NavLink to="/" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
+                  <LayoutDashboard size={20} />
+                  Dashboard
+                </NavLink>
+                <NavLink to="/inventory" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
+                  <Store size={20} />
+                  Inventory
+                </NavLink>
+              </>
+            )}
+            <NavLink to="/sales" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
               <ShoppingCart size={20} />
               Sales
             </NavLink>
-            <NavLink to="/expenses" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
-              <Receipt size={20} />
-              Expenses
-            </NavLink>
+            {role === 'Admin' && (
+              <NavLink to="/expenses" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
+                <Receipt size={20} />
+                Expenses
+              </NavLink>
+            )}
+            <button onClick={logout} className="nav-link" style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', marginTop: 'auto', color: '#ef4444' }}>
+              <LogOut size={20} style={{ marginRight: '8px' }} />
+              <span style={{ fontSize: '16px', fontWeight: '500' }}>Logout</span>
+            </button>
           </nav>
-        </aside>
+        )}
+      </aside>
 
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/inventory" element={<Inventory />} />
-            <Route path="/sales" element={<Sales />} />
-            <Route path="/expenses" element={<Expenses />} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
+      <main className="main-content">
+        <Routes>
+          <Route path="/" element={<ProtectedRoute allowedRoles={['Admin']}><Dashboard /></ProtectedRoute>} />
+          <Route path="/inventory" element={<ProtectedRoute allowedRoles={['Admin']}><Inventory /></ProtectedRoute>} />
+          <Route path="/expenses" element={<ProtectedRoute allowedRoles={['Admin']}><Expenses /></ProtectedRoute>} />
+          <Route path="/sales" element={<ProtectedRoute allowedRoles={['Admin', 'Cashier']}><Sales /></ProtectedRoute>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+    </div>
   );
-}
+};
+
+const App = () => {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
+  );
+};
 
 export default App;

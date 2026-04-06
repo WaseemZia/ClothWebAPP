@@ -1,11 +1,3 @@
-D:\HajiGulCloth\API\obj\Debug\net9.0\API.csproj.AssemblyReference.cache
-D:\HajiGulCloth\API\obj\Debug\net9.0\rpswa.dswa.cache.json
-D:\HajiGulCloth\API\obj\Debug\net9.0\API.GeneratedMSBuildEditorConfig.editorconfig
-D:\HajiGulCloth\API\obj\Debug\net9.0\API.AssemblyInfoInputs.cache
-D:\HajiGulCloth\API\obj\Debug\net9.0\API.AssemblyInfo.cs
-D:\HajiGulCloth\API\obj\Debug\net9.0\API.csproj.CoreCompileInputs.cache
-D:\HajiGulCloth\API\obj\Debug\net9.0\API.MvcApplicationPartsAssemblyInfo.cs
-D:\HajiGulCloth\API\obj\Debug\net9.0\API.MvcApplicationPartsAssemblyInfo.cache
 D:\HajiGulCloth\API\bin\Debug\net9.0\appsettings.Development.json
 D:\HajiGulCloth\API\bin\Debug\net9.0\appsettings.json
 D:\HajiGulCloth\API\bin\Debug\net9.0\API.staticwebassets.endpoints.json
@@ -16,7 +8,10 @@ D:\HajiGulCloth\API\bin\Debug\net9.0\API.dll
 D:\HajiGulCloth\API\bin\Debug\net9.0\API.pdb
 D:\HajiGulCloth\API\bin\Debug\net9.0\Azure.Core.dll
 D:\HajiGulCloth\API\bin\Debug\net9.0\Azure.Identity.dll
+D:\HajiGulCloth\API\bin\Debug\net9.0\BCrypt.Net-Next.dll
 D:\HajiGulCloth\API\bin\Debug\net9.0\Humanizer.dll
+D:\HajiGulCloth\API\bin\Debug\net9.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+D:\HajiGulCloth\API\bin\Debug\net9.0\Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll
 D:\HajiGulCloth\API\bin\Debug\net9.0\Microsoft.AspNetCore.OpenApi.dll
 D:\HajiGulCloth\API\bin\Debug\net9.0\Microsoft.Bcl.AsyncInterfaces.dll
 D:\HajiGulCloth\API\bin\Debug\net9.0\Microsoft.Build.Locator.dll
@@ -148,6 +143,15 @@ D:\HajiGulCloth\API\bin\Debug\net9.0\runtimes\win\lib\net6.0\System.Drawing.Comm
 D:\HajiGulCloth\API\bin\Debug\net9.0\runtimes\win\lib\net6.0\System.Runtime.Caching.dll
 D:\HajiGulCloth\API\bin\Debug\net9.0\runtimes\win\lib\net6.0\System.Security.Cryptography.ProtectedData.dll
 D:\HajiGulCloth\API\bin\Debug\net9.0\runtimes\win\lib\net6.0\System.Windows.Extensions.dll
+D:\HajiGulCloth\API\obj\Debug\net9.0\API.csproj.AssemblyReference.cache
+D:\HajiGulCloth\API\obj\Debug\net9.0\rpswa.dswa.cache.json
+D:\HajiGulCloth\API\obj\Debug\net9.0\API.GeneratedMSBuildEditorConfig.editorconfig
+D:\HajiGulCloth\API\obj\Debug\net9.0\API.AssemblyInfoInputs.cache
+D:\HajiGulCloth\API\obj\Debug\net9.0\API.AssemblyInfo.cs
+D:\HajiGulCloth\API\obj\Debug\net9.0\API.csproj.CoreCompileInputs.cache
+D:\HajiGulCloth\API\obj\Debug\net9.0\API.MvcApplicationPartsAssemblyInfo.cs
+D:\HajiGulCloth\API\obj\Debug\net9.0\API.MvcApplicationPartsAssemblyInfo.cache
+D:\HajiGulCloth\API\obj\Debug\net9.0\API.sourcelink.json
 D:\HajiGulCloth\API\obj\Debug\net9.0\rjimswa.dswa.cache.json
 D:\HajiGulCloth\API\obj\Debug\net9.0\rjsmrazor.dswa.cache.json
 D:\HajiGulCloth\API\obj\Debug\net9.0\rjsmcshtml.dswa.cache.json
@@ -162,7 +166,3 @@ D:\HajiGulCloth\API\obj\Debug\net9.0\refint\API.dll
 D:\HajiGulCloth\API\obj\Debug\net9.0\API.pdb
 D:\HajiGulCloth\API\obj\Debug\net9.0\API.genruntimeconfig.cache
 D:\HajiGulCloth\API\obj\Debug\net9.0\ref\API.dll
-D:\HajiGulCloth\api\obj\Debug\net9.0\API.sourcelink.json
-D:\HajiGulCloth\API\bin\Debug\net9.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
-D:\HajiGulCloth\API\bin\Debug\net9.0\BCrypt.Net-Next.dll
-D:\HajiGulCloth\api\bin\Debug\net9.0\Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll

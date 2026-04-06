@@ -32,6 +32,7 @@ const Sales = () => {
       await fetchData();
     };
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSubmit = async (e) => {
