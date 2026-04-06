@@ -72,6 +72,9 @@ namespace API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal>("MetersPerSuit")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -84,6 +87,10 @@ namespace API.Migrations
 
                     b.Property<decimal>("RemainingQuantity")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("SuitType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 

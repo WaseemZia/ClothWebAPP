@@ -17,5 +17,8 @@ namespace API.Models
        public string ClothType { get; set; } = "Wash & Wear"; 
 
         public DateTime DateAdded { get; set; } = DateTime.UtcNow;
+        // For Women's clothing differentiation
+        public string SuitType { get; set; } = "Unstitched"; // "Stitched" or "Unstitched"
+        public decimal MetersPerSuit { get; set; } = 0;      // Custom meters (Women only)
     }
 }

@@ -1,2 +1,34 @@
+# Appsettings
 appsettings.json
 appsettings.*.json
+
+# Build folders
+bin/
+obj/
+**/bin/
+**/obj/
+
+# Visual Studio
+.vs/
+.vscode/
+
+# User files
+*.user
+*.suo
+
+# Build outputs
+*.dll
+*.exe
+*.pdb
+*.cache
+*.log
+
+# EF migrations snapshot (optional)
+*ModelSnapshot.cs
+
+# Node
+node_modules/
+
+# Frontend builds
+dist/
+build/

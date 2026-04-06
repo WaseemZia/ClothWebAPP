@@ -33,6 +33,15 @@ namespace API.Controllers
         [HttpPost]
         public async Task<ActionResult<Item>> PostItem(Item item)
         {
+            if (item.GenderCategory == "Men")
+            {
+                item.MetersPerSuit=item.ClothType.ToLower().Contains("cotton")?4.5m:4m;
+                item.SuitType="Unstiched";
+            }
+            else if (item.GenderCategory == "Female")
+            {
+                item.MetersPerSuit=0;
+            }
             var existingItem = await _context.Items
                 .FirstOrDefaultAsync(i => i.Name.Trim().ToLower() == item.Name.Trim().ToLower()
                 && i.PurchaseRate== item.PurchaseRate );
