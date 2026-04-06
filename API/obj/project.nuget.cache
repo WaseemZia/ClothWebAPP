@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "PvUWTJcigPc=",
+  "dgSpecHash": "Xu++PBi+R7E=",
   "success": true,
-  "projectFilePath": "D:\\HajiGulCloth\\API\\API.csproj",
+  "projectFilePath": "D:\\HajiGulCloth\\api\\API.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\hp\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\hp\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",
