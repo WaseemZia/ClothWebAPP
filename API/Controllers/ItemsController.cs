@@ -84,5 +84,53 @@ namespace API.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+
+        // Get items filtered by gender
+    [HttpGet("by-gender/{gender}")]
+     public async Task<ActionResult<IEnumerable<Item>>> GetItemByGender(string gender)
+        {
+            return await _context.Items.
+            Where(x=>x.GenderCategory==gender)
+            .OrderByDescending(x=>x.Id)
+            .ToListAsync();
+        }
+        // Get stock summary by gender
+       [HttpGet("stock-summary")]
+        public async Task<ActionResult> GetSummary()
+        {
+            var menItems= await _context.Items.Where(x=>x.GenderCategory=="Men").ToListAsync();
+            var womenItems= await _context.Items.Where(x=>x.GenderCategory=="Women").ToListAsync();
+            var menStockMeter=menItems.Sum(x=>x.RemainingQuantity);
+            var womenStockMeter= womenItems.Where(x=>x.SuitType=="UnStitched").Sum(x=>x.RemainingQuantity);
+            var womwnStockPieces=womenItems.Where(x=>x.SuitType=="Stitched").Sum(x=>x.RemainingQuantity);
+            //calculating men available suit
+            var menAvailableSuit= menItems.Sum(x=>x.MetersPerSuit>0?Math.Floor(x.RemainingQuantity/x.MetersPerSuit):0);
+            // Calculate available suits for women (unstitched only)
+            var womenAvailableSuit=womenItems.Where(x=>x.SuitType=="UnStitched" && x.MetersPerSuit>0)
+                                       .Sum(x=>Math.Floor(x.RemainingQuantity/x.MetersPerSuit));
+
+            return Ok(new
+            {
+                men=new
+                {
+                    totalMeter=menStockMeter,
+                    availableSuit=menAvailableSuit,
+                    itemCount=menItems.Count
+                },
+                women=new
+                {
+                    unstitched=new
+                    {
+                        totalMeter=womenStockMeter,
+                        availableSuit=womenAvailableSuit
+                    },
+                    stitched = new
+                    {
+                        totalPieces=womwnStockPieces
+                    },itemCount=womenItems.Count
+
+                }
+            });
+        }
     }
 }
