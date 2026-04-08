@@ -35,12 +35,16 @@ namespace API.Controllers
         {
             if (item.GenderCategory == "Men")
             {
-                item.MetersPerSuit=item.ClothType.ToLower().Contains("cotton")?4.5m:4m;
-                item.SuitType="Unstiched";
+                item.MetersPerSuit = item.ClothType.ToLower().Contains("cotton") ? 4.5m : 4m;
+                item.SuitType = "Unstitched";
             }
-            else if (item.GenderCategory == "Female")
+            else if (item.GenderCategory == "Women")
             {
-                item.MetersPerSuit=0;
+                // Women: Use the SuitType and MetersPerSuit provided by frontend
+                if (item.SuitType == "Stitched")
+                {
+                    item.MetersPerSuit = 0; // Not applicable for stitched
+                }
             }
             var existingItem = await _context.Items
                 .FirstOrDefaultAsync(i => i.Name.Trim().ToLower() == item.Name.Trim().ToLower()

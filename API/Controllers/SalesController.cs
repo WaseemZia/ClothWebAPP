@@ -27,65 +27,155 @@ namespace API.Controllers
         {
             var item = await _context.Items.FindAsync(sale.ItemId);
             if (item == null) return NotFound("Item not found");
+            
             decimal totalToDeduct = 0;
+            
+            // CALCULATE DEDUCTION BASED ON GENDER & TYPE
             if (item.GenderCategory == "Men")
             {
-                totalToDeduct=sale.QuantitySold*item.MetersPerSuit;
-                 if (item.RemainingQuantity < totalToDeduct)
-                return BadRequest($"Not enough stock .Need{totalToDeduct}m,have{item.RemainingQuantity}m");
+                // Men: Always calculate by meters
+                totalToDeduct = sale.QuantitySold * item.MetersPerSuit;
+                
+                if (item.RemainingQuantity < totalToDeduct)
+                    return BadRequest($"Not enough stock. Need {totalToDeduct}m, have {item.RemainingQuantity}m");
             }
-            else if(item.GenderCategory=="Women")
+            else if (item.GenderCategory == "Women")
             {
                 if (item.SuitType == "Unstitched")
                 {
                     // Women Unstitched: Calculate by meters
-                    totalToDeduct=sale.QuantitySold*item.MetersPerSuit;
-                    return BadRequest($"Not enough stock .Need{totalToDeduct}m,have{item.RemainingQuantity}m");
-
+                    totalToDeduct = sale.QuantitySold * item.MetersPerSuit;
+                    
+                    if (item.RemainingQuantity < totalToDeduct)
+                        return BadRequest($"Not enough stock. Need {totalToDeduct}m, have {item.RemainingQuantity}m");
                 }
                 else
                 {
-                     // Women Stitched: Deduct by pieces
-                     totalToDeduct=sale.QuantitySold;
-                     return BadRequest($"Not enough stock .Need{totalToDeduct}m,have{item.RemainingQuantity}m");
-
+                    // Women Stitched: Deduct by pieces
+                    totalToDeduct = sale.QuantitySold;
+                    
+                    if (item.RemainingQuantity < totalToDeduct)
+                        return BadRequest($"Not enough stock. Need {totalToDeduct} pieces, have {item.RemainingQuantity} pieces");
                 }
             }
-              // 1. Determine how many meters to deduct per suit!
-    // decimal metersPerSuit = 4.0m; // Default to Wash & Wear amount
-    // // Check if the cloth name contains the word "cotton"
-    // if (item.ClothType.ToLower().Contains("cotton"))
-    // {
-    //     metersPerSuit = 4.5m;
-    // }
-    // 2. Calculate the exact meter amount to deduct
-    // decimal totalMetersToDeduct = sale.QuantitySold * metersPerSuit;
-    sale.TotalSalesAmount=sale.QuantitySold*sale.SoldRate;
-    sale.SaleDate=DateTime.UtcNow;
-     // Deduct stock
-     item.RemainingQuantity=-totalToDeduct;
-    //  _context.Sales.Add(sale);
-    //   if (item.RemainingQuantity < totalMetersToDeduct)
-    //     return BadRequest($"Not enough stock. You need {totalMetersToDeduct} meters, but only have {item.RemainingQuantity} meters left.");
-
-    //         sale.TotalSalesAmount = sale.QuantitySold * sale.SoldRate;
-    //         sale.SaleDate = DateTime.UtcNow;
-
-    //         item.RemainingQuantity -= totalMetersToDeduct;
-
+            
+            // Calculate sale amount
+            sale.TotalSalesAmount = sale.QuantitySold * sale.SoldRate;
+            sale.SaleDate = DateTime.UtcNow;
+            
+            // Deduct stock
+            item.RemainingQuantity -= totalToDeduct;
+            
             _context.Sales.Add(sale);
             _context.Entry(item).State = EntityState.Modified;
-            
             await _context.SaveChangesAsync();
-
+            
             return CreatedAtAction(nameof(GetSales), new { id = sale.Id }, sale);
         }
         [HttpGet("by-gender/{gender}")]
-public async Task<ActionResult<IEnumerable<Sale>>> GetSalesByGender(string gender)
+        public async Task<ActionResult<IEnumerable<Sale>>> GetSalesByGender(string gender)
         {
-           return await _context.Sales.Include(x=>x.ItemId)
-            .Where(x=>x.Item!=null && x.Item.GenderCategory==gender)
-            .OrderByDescending(i=>i.SaleDate).ToListAsync();
+            return await _context.Sales.Include(s => s.Item)
+                .Where(s => s.Item != null && s.Item.GenderCategory == gender)
+                .OrderByDescending(s => s.SaleDate)
+                .ToListAsync();
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutSale(int id, Sale sale)
+        {
+            if (id != sale.Id) return BadRequest();
+            
+            var existingSale = await _context.Sales.FindAsync(id);
+            if (existingSale == null) return NotFound("Sale not found");
+            
+            // Get the item to recalculate stock
+            var item = await _context.Items.FindAsync(sale.ItemId);
+            if (item == null) return NotFound("Item not found");
+            
+            // Calculate the difference in quantity
+            var quantityDifference = sale.QuantitySold - existingSale.QuantitySold;
+            
+            // Calculate meters/pieces to deduct or restore
+            decimal adjustmentAmount = 0;
+            
+            if (item.GenderCategory == "Men")
+            {
+                adjustmentAmount = quantityDifference * item.MetersPerSuit;
+            }
+            else if (item.GenderCategory == "Women")
+            {
+                if (item.SuitType == "Unstitched")
+                {
+                    adjustmentAmount = quantityDifference * item.MetersPerSuit;
+                }
+                else
+                {
+                    adjustmentAmount = quantityDifference;
+                }
+            }
+            
+            // Check if there's enough stock for increase
+            if (quantityDifference > 0 && item.RemainingQuantity < adjustmentAmount)
+            {
+                return BadRequest($"Not enough stock. Need {adjustmentAmount} more, but only have {item.RemainingQuantity}");
+            }
+            
+            // Update sale
+            existingSale.ItemId = sale.ItemId;
+            existingSale.QuantitySold = sale.QuantitySold;
+            existingSale.SoldRate = sale.SoldRate;
+            existingSale.TotalSalesAmount = sale.QuantitySold * sale.SoldRate;
+            
+            // Adjust stock
+            item.RemainingQuantity -= adjustmentAmount;
+            
+            _context.Entry(existingSale).State = EntityState.Modified;
+            _context.Entry(item).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteSale(int id)
+        {
+            var sale = await _context.Sales.FindAsync(id);
+            if (sale == null) return NotFound("Sale not found");
+            
+            // Get the item to restore stock
+            var item = await _context.Items.FindAsync(sale.ItemId);
+            if (item != null)
+            {
+                // Calculate how much to restore
+                decimal amountToRestore = 0;
+                
+                if (item.GenderCategory == "Men")
+                {
+                    amountToRestore = sale.QuantitySold * item.MetersPerSuit;
+                }
+                else if (item.GenderCategory == "Women")
+                {
+                    if (item.SuitType == "Unstitched")
+                    {
+                        amountToRestore = sale.QuantitySold * item.MetersPerSuit;
+                    }
+                    else
+                    {
+                        amountToRestore = sale.QuantitySold;
+                    }
+                }
+                
+                // Restore stock
+                item.RemainingQuantity += amountToRestore;
+                _context.Entry(item).State = EntityState.Modified;
+            }
+            
+            // Delete the sale
+            _context.Sales.Remove(sale);
+            await _context.SaveChangesAsync();
+            
+            return NoContent();
         }
 
     }

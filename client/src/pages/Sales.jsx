@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { Plus } from 'lucide-react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 import DashboardFilter from '../pages/DashboardFilters'; // Importing our reusable filter!
 
 const Sales = () => {
@@ -8,6 +8,8 @@ const Sales = () => {
   const [items, setItems] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [selectedGender, setSelectedGender] = useState('');
+  const [editingSale, setEditingSale] = useState(null);
   const [formData, setFormData] = useState({ itemId: '', quantitySold: 1, soldRate: 0 });
 
   // 1. BRAND NEW STATES FOR OUR FILTERS
@@ -16,9 +18,10 @@ const Sales = () => {
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
 
-  const fetchData = async () => {
+  const fetchData = async (gender = '') => {
     try {
-      const [salesRes, itemsRes] = await Promise.all([ api.get('/sales'), api.get('/items') ]);
+      const itemsUrl = gender ? `/items/by-gender/${gender}` : '/items';
+      const [salesRes, itemsRes] = await Promise.all([ api.get('/sales'), api.get(itemsUrl) ]);
       setSales(salesRes.data);
       setItems(itemsRes.data.filter(i => i.remainingQuantity > 0)); // Only items in stock
       if(itemsRes.data.length > 0 && formData.itemId === '') {
@@ -29,23 +32,58 @@ const Sales = () => {
 
   useEffect(() => {
     const load = async () => {
-      await fetchData();
+      await fetchData(selectedGender);
     };
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [selectedGender]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
     try {
-      await api.post('/sales', formData);
+      if (editingSale) {
+        // Update existing sale
+        await api.put(`/sales/${editingSale.id}`, formData);
+        setEditingSale(null);
+      } else {
+        // Create new sale
+        await api.post('/sales', formData);
+      }
       setShowForm(false);
       setFormData({ itemId: items.length > 0 ? items[0].id : '', quantitySold: 1, soldRate: 0 });
-      fetchData();
+      fetchData(selectedGender);
     } catch (err) { 
       setErrorMsg(typeof err.response?.data === 'string' ? err.response.data : "An error occurred while adding the sale.");
     }
+  };
+
+  const handleEdit = (sale) => {
+    setEditingSale(sale);
+    setFormData({
+      itemId: sale.itemId,
+      quantitySold: sale.quantitySold,
+      soldRate: sale.soldRate
+    });
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this sale? This action cannot be undone!')) {
+      try {
+        await api.delete(`/sales/${id}`);
+        fetchData(selectedGender);
+      } catch (err) { 
+        console.error(err);
+        alert('Failed to delete sale.');
+      }
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingSale(null);
+    setShowForm(false);
+    setFormData({ itemId: items.length > 0 ? items[0].id : '', quantitySold: 1, soldRate: 0 });
   };
 
   // 2. THE DUAL-FILTER LOGIC (Name + Date)
@@ -93,27 +131,52 @@ const Sales = () => {
     <div>
       <div className="page-title">
         Sales Management
-        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
-          <Plus size={18} /> Record New Sale
+        <button className="btn btn-primary" onClick={() => {
+          setEditingSale(null);
+          setShowForm(!showForm);
+        }}>
+          <Plus size={18} /> {showForm && editingSale ? 'Cancel' : 'Record New Sale'}
         </button>
       </div>
 
       {showForm && (
-        <div className="card" style={{ marginBottom: '24px' }}>
+        <div className="card" style={{ marginBottom: '24px', border: editingSale ? '2px solid var(--warning)' : 'none' }}>
+          <h3 style={{ marginBottom: '16px', color: editingSale ? 'var(--warning)' : 'inherit' }}>
+            {editingSale ? '✏️ Edit Sale' : '➕ Record New Sale'}
+          </h3>
           {errorMsg && <div style={{color: 'var(--danger)', marginBottom: '16px', fontWeight: 600}}>{errorMsg}</div>}
           <form onSubmit={handleSubmit}>
             <div className="form-grid">
+              {/* Gender Filter */}
+              <div className="input-group">
+                <label>Filter by Gender</label>
+                <select value={selectedGender} onChange={e => setSelectedGender(e.target.value)}>
+                  <option value="">All Genders</option>
+                  <option value="Men">Men</option>
+                  <option value="Women">Women</option>
+                </select>
+              </div>
+
               <div className="input-group">
                 <label>Select Item</label>
                 <select required value={formData.itemId} onChange={e => setFormData({...formData, itemId: parseInt(e.target.value)})}>
                   <option value="">-- Select an Item --</option>
                   {items.map(item => (
-                    <option key={item.id} value={item.id}>{item.name} ({item.remainingQuantity} in stock)</option>
+                    <option key={item.id} value={item.id}>
+                      {item.name} 
+                      {item.genderCategory === 'Women' && item.suitType === 'Stitched'
+                        ? ` (${item.remainingQuantity} pcs)`
+                        : ` (${item.remainingQuantity}m)`}
+                    </option>
                   ))}
                 </select>
               </div>
               <div className="input-group">
-                <label>Quantity Sold (Suits)</label>
+                <label>
+                  {items.find(i => i.id === formData.itemId)?.suitType === 'Stitched'
+                    ? 'Quantity Sold (Pieces)'
+                    : 'Quantity Sold (Suits)'}
+                </label>
                 <input required type="number" min="1" value={formData.quantitySold} onChange={e => setFormData({...formData, quantitySold: parseInt(e.target.value) || 0})} />
               </div>
               <div className="input-group">
@@ -121,8 +184,16 @@ const Sales = () => {
                 <input required type="number" step="0.01" value={formData.soldRate} onChange={e => setFormData({...formData, soldRate: parseFloat(e.target.value) || 0})} />
               </div>
             </div>
-            {/* The Submit button you accidentally deleted returns! */}
-            <button type="submit" className="btn btn-primary" disabled={items.length === 0}>Record Sale</button>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+              <button type="submit" className="btn btn-primary" disabled={items.length === 0}>
+                {editingSale ? '💾 Update Sale' : '💾 Record Sale'}
+              </button>
+              {editingSale && (
+                <button type="button" className="btn btn-secondary" onClick={handleCancelEdit}>
+                  Cancel Edit
+                </button>
+              )}
+            </div>
           </form>
         </div>
       )}
@@ -166,10 +237,13 @@ const Sales = () => {
             <tr>
               <th>ID</th>
               <th>Item Name</th>
+              <th>Gender</th>
+              <th>Type</th>
               <th>Qty Sold</th>
               <th>Sold Rate</th>
               <th>Total Amount</th>
               <th>Date</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -177,14 +251,42 @@ const Sales = () => {
               <tr key={sale.id}>
                 <td>#{sale.id}</td>
                 <td style={{fontWeight: 500}}>{sale.item ? sale.item.name : 'Unknown Item'}</td>
+                <td>{sale.item ? (sale.item.genderCategory === 'Men' ? 'Men' : 'Women') : '-'}</td>
+                <td>
+                  {sale.item ? 
+                    (sale.item.genderCategory === 'Women' 
+                      ? (sale.item.suitType === 'Stitched' ? 'Stitched' : 'Unstitched')
+                      : 'Unstitched') 
+                    : '-'}
+                </td>
                 <td>{sale.quantitySold}</td>
                 <td>Rs {sale.soldRate.toLocaleString()}</td>
                 <td style={{color: 'var(--success)', fontWeight: 600}}>Rs {sale.totalSalesAmount.toLocaleString()}</td>
                 <td>{new Date(sale.saleDate).toLocaleDateString()}</td>
+                <td>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button 
+                      className="btn btn-secondary" 
+                      style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                      onClick={() => handleEdit(sale)}
+                      title="Edit Sale"
+                    >
+                      <Edit size={16} />
+                    </button>
+                    <button 
+                      className="btn" 
+                      style={{ padding: '6px 12px', fontSize: '0.85rem', backgroundColor: 'var(--danger)', color: 'white' }}
+                      onClick={() => handleDelete(sale.id)}
+                      title="Delete Sale"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
             {filteredSales.length === 0 && (
-              <tr><td colSpan="6" style={{textAlign: 'center'}}>No sales match your search or date filter.</td></tr>
+              <tr><td colSpan="9" style={{textAlign: 'center'}}>No sales match your search or date filter.</td></tr>
             )}
           </tbody>
         </table>
