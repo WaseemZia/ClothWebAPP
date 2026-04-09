@@ -13,13 +13,13 @@ namespace API.Models
         public decimal SoldRate { get; set; }
         public decimal TotalSalesAmount { get; set; }
         public DateTime SaleDate { get; set; } = DateTime.UtcNow;
-                // NEW: Customer & Loan fields
-
-     public int? CustomerId{get;set;}
-     public Customer? Customer{get;set;}
-     public decimal AmountPaid{get;set;}
-     public decimal LoanAmount{get;set;}
-     public bool IsLoan { get; set; } = false;
+        
+        // Customer & Loan fields
+        public int? CustomerId { get; set; }
+        public Customer? Customer { get; set; }
+        public decimal AmountPaid { get; set; } = 0;
+        public decimal LoanAmount { get; set; } = 0;
+        public bool IsLoan { get; set; } = false;
 
     }
 }

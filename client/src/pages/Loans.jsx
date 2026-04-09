@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { DollarSign } from 'lucide-react';
+import { DollarSign, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Loans = () => {
@@ -12,6 +12,10 @@ const Loans = () => {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [filter, setFilter] = useState('Active');
+  
+  // History Modal States
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyLoan, setHistoryLoan] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -56,6 +60,11 @@ const Loans = () => {
     setPaymentAmount('');
     setPaymentNotes('');
     setShowPaymentForm(true);
+  };
+
+  const openHistoryModal = (loan) => {
+    setHistoryLoan(loan);
+    setShowHistoryModal(true);
   };
 
   return (
@@ -155,6 +164,52 @@ const Loans = () => {
         </div>
       )}
 
+      {/* History Modal */}
+      {showHistoryModal && historyLoan && (
+        <div className="card" style={{ marginBottom: '24px', border: '2px solid var(--primary-color)' }}>
+          <h3 style={{ marginBottom: '16px', color: 'var(--primary-color)' }}>
+            📜 Payment History for {historyLoan.customer?.name}
+          </h3>
+          <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'var(--bg-color)', borderRadius: '6px' }}>
+            <p><strong>Total Loan:</strong> Rs {historyLoan.totalAmount.toLocaleString()}</p>
+            <p><strong>Remaining Balance:</strong> <span style={{ color: 'var(--danger)', fontWeight: 'bold' }}>Rs {historyLoan.remainingBalance.toLocaleString()}</span></p>
+          </div>
+          
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Amount Paid</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historyLoan.payments && historyLoan.payments.length > 0 ? (
+                  historyLoan.payments.map((payment, index) => (
+                    <tr key={payment.id || index}>
+                      <td>{new Date(payment.paymentDate).toLocaleString()}</td>
+                      <td style={{ color: 'var(--success)', fontWeight: 600 }}>Rs {payment.amount.toLocaleString()}</td>
+                      <td>{payment.notes || '-'}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="3" style={{ textAlign: 'center' }}>No historical payments recorded.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div style={{ marginTop: '16px', textAlign: 'right' }}>
+            <button className="btn btn-secondary" onClick={() => { setShowHistoryModal(false); setHistoryLoan(null); }}>
+              Close History
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Loans Table */}
       <div className="card table-container">
         <table>
@@ -196,15 +251,25 @@ const Loans = () => {
                 </td>
                 <td>{new Date(loan.loanDate).toLocaleDateString()}</td>
                 <td>
-                  {loan.status === 'Active' && (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {loan.status === 'Active' && (
+                      <button
+                        className="btn btn-primary"
+                        style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                        onClick={() => openPaymentForm(loan)}
+                      >
+                        <DollarSign size={16} /> Pay
+                      </button>
+                    )}
                     <button
-                      className="btn btn-primary"
+                      className="btn btn-secondary"
                       style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-                      onClick={() => openPaymentForm(loan)}
+                      onClick={() => openHistoryModal(loan)}
+                      title="View Payment History"
                     >
-                      <DollarSign size={16} /> Pay
+                      <History size={16} /> History
                     </button>
-                  )}
+                  </div>
                 </td>
               </tr>
             ))}

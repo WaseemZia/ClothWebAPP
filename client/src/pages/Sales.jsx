@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { Plus, Edit, Trash2 } from 'lucide-react';
-import DashboardFilter from '../pages/DashboardFilters'; // Importing our reusable filter!
+import { Plus, Edit, Trash2, Search, Download, FileText } from 'lucide-react';
+import { generateInvoice } from '../utils/generateInvoice';
+import { generateSalesReport } from '../utils/generateSalesReport';
 
 const Sales = () => {
   const [sales, setSales] = useState([]);
@@ -20,11 +21,7 @@ const Sales = () => {
   const [amountPaid, setAmountPaid] = useState('');
   const [newCustomerData, setNewCustomerData] = useState({ name: '', phone: '', address: '' });
 
-  // 1. BRAND NEW STATES FOR OUR FILTERS
   const [searchName, setSearchName] = useState('');
-  const [dateFilter, setDateFilter] = useState('All');
-  const [customStart, setCustomStart] = useState('');
-  const [customEnd, setCustomEnd] = useState('');
 
   const fetchData = async (gender = '') => {
     try {
@@ -35,11 +32,9 @@ const Sales = () => {
         api.get('/customers')
       ]);
       setSales(salesRes.data);
+      console.log(itemsRes.data);
       setItems(itemsRes.data.filter(i => i.remainingQuantity > 0));
       setCustomers(customersRes.data);
-      if(itemsRes.data.length > 0 && formData.itemId === '') {
-          setFormData(prev => ({...prev, itemId: itemsRes.data[0].id}));
-      }
     } catch (err) { console.error(err); }
   };
 
@@ -48,7 +43,6 @@ const Sales = () => {
       await fetchData(selectedGender);
     };
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedGender]);
 
   const handleSubmit = async (e) => {
@@ -90,7 +84,7 @@ const Sales = () => {
       setAmountPaid('');
       setSelectedCustomerId('');
       setNewCustomerData({ name: '', phone: '', address: '' });
-      setFormData({ itemId: items.length > 0 ? items[0].id : '', quantitySold: 1, soldRate: 0 });
+      setFormData({ itemId: '', quantitySold: 1, soldRate: 0 });
       fetchData(selectedGender);
     } catch (err) { 
       setErrorMsg(typeof err.response?.data === 'string' ? err.response.data : "An error occurred while adding the sale.");
@@ -127,42 +121,14 @@ const Sales = () => {
     setAmountPaid('');
     setSelectedCustomerId('');
     setNewCustomerData({ name: '', phone: '', address: '' });
-    setFormData({ itemId: items.length > 0 ? items[0].id : '', quantitySold: 1, soldRate: 0 });
+    setFormData({ itemId: '', quantitySold: 1, soldRate: 0 });
   };
 
-  // 2. THE DUAL-FILTER LOGIC (Name + Date)
   const getFilteredSales = () => {
-    const now = new Date();
     return sales.filter(sale => {
-      // Logic A: Filter by Name
       const itemName = sale.item ? sale.item.name.toLowerCase() : '';
       if (searchName && !itemName.includes(searchName.toLowerCase())) {
-        return false; // Skip this sale if the name doesn't match roughly what we typed
-      }
-
-      // Logic B: Filter by Date
-      const saleDate = new Date(sale.saleDate);
-      if(dateFilter === "Daily"){
-        return saleDate.getFullYear() === now.getFullYear() &&
-               saleDate.getMonth() === now.getMonth() &&
-               saleDate.getDate() === now.getDate();
-      }
-      if(dateFilter === "Weekly"){
-         const oneWeekAgo = new Date();
-         oneWeekAgo.setDate(now.getDate() - 7); 
-         return saleDate >= oneWeekAgo && saleDate <= now;
-      }
-      if(dateFilter === "Monthly"){
-         return saleDate.getFullYear() === now.getFullYear() &&
-                saleDate.getMonth() === now.getMonth();
-      }
-      if(dateFilter === "Custom"){
-         if(!customStart || !customEnd) return true;
-         const start = new Date(customStart);
-         start.setHours(0, 0, 0, 0); 
-         const end = new Date(customEnd);
-         end.setHours(23, 59, 59, 999); 
-         return saleDate >= start && saleDate <= end;
+        return false;
       }
       return true;
     });
@@ -175,12 +141,17 @@ const Sales = () => {
     <div>
       <div className="page-title">
         Sales Management
-        <button className="btn btn-primary" onClick={() => {
-          setEditingSale(null);
-          setShowForm(!showForm);
-        }}>
-          <Plus size={18} /> {showForm && editingSale ? 'Cancel' : 'Record New Sale'}
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button className="btn btn-success" style={{ backgroundColor: 'var(--success)', color: 'white' }} onClick={() => generateSalesReport(filteredSales, filteredTotalAmount)}>
+            <FileText size={18} /> Download Report
+          </button>
+          <button className="btn btn-primary" onClick={() => {
+            setEditingSale(null);
+            setShowForm(!showForm);
+          }}>
+            <Plus size={18} /> {showForm && editingSale ? 'Cancel' : 'Record New Sale'}
+          </button>
+        </div>
       </div>
 
       {showForm && (
@@ -272,7 +243,7 @@ const Sales = () => {
 
               <div className="input-group">
                 <label>Select Item</label>
-                <select required value={formData.itemId} onChange={e => setFormData({...formData, itemId: parseInt(e.target.value)})}>
+                <select required value={formData.itemId} onChange={e => setFormData({...formData, itemId: e.target.value ? parseInt(e.target.value) : ''})}>
                   <option value="">-- Select an Item --</option>
                   {items.map(item => (
                     <option key={item.id} value={item.id}>
@@ -359,35 +330,27 @@ const Sales = () => {
         </div>
       )}
 
-      {/* 3. OUR NEW FILTER UI (Side-by-Side Flexbox) */}
+      {/* Search Bar matching Customer UI */}
       <div className="card" style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-          
-          <div style={{ flex: '1', minWidth: '250px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', fontWeight: 600 }}>🔍 Search by Cloth Name:</label>
-            <input 
-               type="text" 
-               placeholder="e.g. Premium Cotton, Wash & Wear..." 
-               value={searchName} 
-               onChange={(e) => setSearchName(e.target.value)} 
-               style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ flex: 1 }}>
+            <input
+              type="text"
+              placeholder="🔍 Search by cloth name..."
+              value={searchName}
+              onChange={e => setSearchName(e.target.value)}
+              style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)' }}
             />
           </div>
-          
-          <div style={{ flex: '2', minWidth: '350px' }}>
-            <DashboardFilter 
-              dateFilter={dateFilter} 
-              setDateFilter={setDateFilter} 
-              customStart={customStart} 
-              setCustomStart={setCustomStart} 
-              customEnd={customEnd} 
-              setCustomEnd={setCustomEnd} 
-            />
-          </div>
-
+          <button className="btn btn-primary" onClick={() => {}}>
+            <Search size={18} /> Search
+          </button>
+          <button className="btn btn-secondary" onClick={() => setSearchName('')}>
+            Clear
+          </button>
         </div>
         
-        <div style={{ fontSize: '1.1rem', fontWeight: '600', marginTop: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+        <div style={{ fontSize: '1.1rem', fontWeight: '600', marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
           Filtered Total Sales: <span style={{ color: 'var(--success)' }}>Rs {filteredTotalAmount.toLocaleString()}</span>
         </div>
       </div>
@@ -444,6 +407,14 @@ const Sales = () => {
                 <td>{new Date(sale.saleDate).toLocaleDateString()}</td>
                 <td>
                   <div style={{ display: 'flex', gap: '8px' }}>
+                    <button 
+                      className="btn" 
+                      style={{ padding: '6px 12px', fontSize: '0.85rem', backgroundColor: 'var(--primary-color)', color: 'white' }}
+                      onClick={() => generateInvoice(sale)}
+                      title="Download Invoice"
+                    >
+                      <Download size={16} />
+                    </button>
                     <button 
                       className="btn btn-secondary" 
                       style={{ padding: '6px 12px', fontSize: '0.85rem' }}

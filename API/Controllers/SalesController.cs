@@ -19,7 +19,10 @@ namespace API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Sale>>> GetSales()
         {
-            return await _context.Sales.Include(s => s.Item).OrderByDescending(s => s.SaleDate).ToListAsync();
+            var sale= await _context.Sales.Include(s => s.Item)
+            .Include(x=>x.Customer)
+            .OrderByDescending(s => s.SaleDate).ToListAsync();
+            return Ok(sale);
         }
 
         [HttpPost]
@@ -105,6 +108,7 @@ namespace API.Controllers
         public async Task<ActionResult<IEnumerable<Sale>>> GetSalesByGender(string gender)
         {
             return await _context.Sales.Include(s => s.Item)
+            .Include(x=>x.Customer)
                 .Where(s => s.Item != null && s.Item.GenderCategory == gender)
                 .OrderByDescending(s => s.SaleDate)
                 .ToListAsync();
@@ -155,9 +159,61 @@ namespace API.Controllers
             existingSale.QuantitySold = sale.QuantitySold;
             existingSale.SoldRate = sale.SoldRate;
             existingSale.TotalSalesAmount = sale.QuantitySold * sale.SoldRate;
+            existingSale.CustomerId = sale.CustomerId;
+            existingSale.AmountPaid = sale.AmountPaid;
+            
+            // Recalculate loan
+            if (existingSale.AmountPaid < existingSale.TotalSalesAmount)
+            {
+                existingSale.IsLoan = true;
+                existingSale.LoanAmount = existingSale.TotalSalesAmount - existingSale.AmountPaid;
+            }
+            else
+            {
+                existingSale.IsLoan = false;
+                existingSale.LoanAmount = 0;
+            }
             
             // Adjust stock
             item.RemainingQuantity -= adjustmentAmount;
+            
+            // Update or create loan if needed
+            if (existingSale.IsLoan && existingSale.CustomerId.HasValue)
+            {
+                var existingLoan = await _context.Loans.FirstOrDefaultAsync(l => l.SaleId == existingSale.Id);
+                if (existingLoan != null)
+                {
+                    // Update existing loan
+                    existingLoan.TotalAmount = existingSale.TotalSalesAmount;
+                    existingLoan.AmountPaid = existingSale.AmountPaid;
+                    existingLoan.RemainingBalance = existingSale.LoanAmount;
+                    _context.Entry(existingLoan).State = EntityState.Modified;
+                }
+                else
+                {
+                    // Create new loan
+                    var loan = new Loan
+                    {
+                        CustomerId = existingSale.CustomerId.Value,
+                        SaleId = existingSale.Id,
+                        TotalAmount = existingSale.TotalSalesAmount,
+                        AmountPaid = existingSale.AmountPaid,
+                        RemainingBalance = existingSale.LoanAmount,
+                        Status = "Active",
+                        LoanDate = DateTime.UtcNow
+                    };
+                    _context.Loans.Add(loan);
+                }
+            }
+            else
+            {
+                // Remove loan if sale is now fully paid
+                var loanToDelete = await _context.Loans.FirstOrDefaultAsync(l => l.SaleId == existingSale.Id);
+                if (loanToDelete != null)
+                {
+                    _context.Loans.Remove(loanToDelete);
+                }
+            }
             
             _context.Entry(existingSale).State = EntityState.Modified;
             _context.Entry(item).State = EntityState.Modified;
@@ -198,6 +254,18 @@ namespace API.Controllers
                 // Restore stock
                 item.RemainingQuantity += amountToRestore;
                 _context.Entry(item).State = EntityState.Modified;
+            }
+            
+            // Delete associated loan if exists
+            var loan = await _context.Loans.FirstOrDefaultAsync(l => l.SaleId == id);
+            if (loan != null)
+            {
+                // Delete all loan payments first
+                var payments = await _context.LoanPayments.Where(p => p.LoanId == loan.Id).ToListAsync();
+                _context.LoanPayments.RemoveRange(payments);
+                
+                // Delete the loan
+                _context.Loans.Remove(loan);
             }
             
             // Delete the sale

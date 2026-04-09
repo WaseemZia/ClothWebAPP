@@ -22,7 +22,7 @@ namespace API.Models
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
         
         // navigation property
-        public ICollection<Sale>? Sales{get;set;}
-        public ICollection<Loan>? Loans{get;set;}
+        public ICollection<Sale> Sales{get;set;}=new List<Sale>();
+        public ICollection<Loan> Loans{get;set;}=new List<Loan>();
     }
 }
