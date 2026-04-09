@@ -11,6 +11,14 @@ const Sales = () => {
   const [selectedGender, setSelectedGender] = useState('');
   const [editingSale, setEditingSale] = useState(null);
   const [formData, setFormData] = useState({ itemId: '', quantitySold: 1, soldRate: 0 });
+  
+  // Customer and payment states
+  const [customers, setCustomers] = useState([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [showCustomerForm, setShowCustomerForm] = useState(false);
+  const [paymentType, setPaymentType] = useState('full');
+  const [amountPaid, setAmountPaid] = useState('');
+  const [newCustomerData, setNewCustomerData] = useState({ name: '', phone: '', address: '' });
 
   // 1. BRAND NEW STATES FOR OUR FILTERS
   const [searchName, setSearchName] = useState('');
@@ -21,9 +29,14 @@ const Sales = () => {
   const fetchData = async (gender = '') => {
     try {
       const itemsUrl = gender ? `/items/by-gender/${gender}` : '/items';
-      const [salesRes, itemsRes] = await Promise.all([ api.get('/sales'), api.get(itemsUrl) ]);
+      const [salesRes, itemsRes, customersRes] = await Promise.all([
+        api.get('/sales'),
+        api.get(itemsUrl),
+        api.get('/customers')
+      ]);
       setSales(salesRes.data);
-      setItems(itemsRes.data.filter(i => i.remainingQuantity > 0)); // Only items in stock
+      setItems(itemsRes.data.filter(i => i.remainingQuantity > 0));
+      setCustomers(customersRes.data);
       if(itemsRes.data.length > 0 && formData.itemId === '') {
           setFormData(prev => ({...prev, itemId: itemsRes.data[0].id}));
       }
@@ -42,15 +55,41 @@ const Sales = () => {
     e.preventDefault();
     setErrorMsg("");
     try {
+      let customerId = selectedCustomerId ? parseInt(selectedCustomerId) : null;
+
+      // If creating new customer
+      if (showCustomerForm && newCustomerData.name && newCustomerData.phone) {
+        const customerRes = await api.post('/customers', newCustomerData);
+        customerId = customerRes.data.id;
+      }
+
+      // Calculate payment details
+      const totalAmount = formData.quantitySold * formData.soldRate;
+      let amountPaidValue = totalAmount;
+      
+      if (paymentType === 'partial' && amountPaid) {
+        amountPaidValue = parseFloat(amountPaid);
+      }
+
+      const saleData = {
+        ...formData,
+        customerId: customerId,
+        amountPaid: amountPaidValue
+      };
+
       if (editingSale) {
-        // Update existing sale
-        await api.put(`/sales/${editingSale.id}`, formData);
+        await api.put(`/sales/${editingSale.id}`, saleData);
         setEditingSale(null);
       } else {
-        // Create new sale
-        await api.post('/sales', formData);
+        await api.post('/sales', saleData);
       }
+      
       setShowForm(false);
+      setShowCustomerForm(false);
+      setPaymentType('full');
+      setAmountPaid('');
+      setSelectedCustomerId('');
+      setNewCustomerData({ name: '', phone: '', address: '' });
       setFormData({ itemId: items.length > 0 ? items[0].id : '', quantitySold: 1, soldRate: 0 });
       fetchData(selectedGender);
     } catch (err) { 
@@ -83,6 +122,11 @@ const Sales = () => {
   const handleCancelEdit = () => {
     setEditingSale(null);
     setShowForm(false);
+    setShowCustomerForm(false);
+    setPaymentType('full');
+    setAmountPaid('');
+    setSelectedCustomerId('');
+    setNewCustomerData({ name: '', phone: '', address: '' });
     setFormData({ itemId: items.length > 0 ? items[0].id : '', quantitySold: 1, soldRate: 0 });
   };
 
@@ -146,6 +190,75 @@ const Sales = () => {
           </h3>
           {errorMsg && <div style={{color: 'var(--danger)', marginBottom: '16px', fontWeight: 600}}>{errorMsg}</div>}
           <form onSubmit={handleSubmit}>
+            {/* Customer Selection */}
+            <div style={{ marginBottom: '20px', padding: '16px', backgroundColor: 'var(--bg-color)', borderRadius: '8px' }}>
+              <h4 style={{ marginBottom: '12px' }}>👤 Customer Information</h4>
+              
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+                <button
+                  type="button"
+                  className={`btn ${!showCustomerForm ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setShowCustomerForm(false)}
+                >
+                  Select Existing Customer
+                </button>
+                <button
+                  type="button"
+                  className={`btn ${showCustomerForm ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setShowCustomerForm(true)}
+                >
+                  Add New Customer
+                </button>
+              </div>
+
+              {showCustomerForm ? (
+                <div className="form-grid">
+                  <div className="input-group">
+                    <label>Customer Name *</label>
+                    <input
+                      type="text"
+                      value={newCustomerData.name}
+                      onChange={e => setNewCustomerData({...newCustomerData, name: e.target.value})}
+                      placeholder="Enter customer name"
+                    />
+                  </div>
+                  <div className="input-group">
+                    <label>Phone Number *</label>
+                    <input
+                      type="text"
+                      value={newCustomerData.phone}
+                      onChange={e => setNewCustomerData({...newCustomerData, phone: e.target.value})}
+                      placeholder="0300-1234567"
+                    />
+                  </div>
+                  <div className="input-group">
+                    <label>Address (Optional)</label>
+                    <input
+                      type="text"
+                      value={newCustomerData.address}
+                      onChange={e => setNewCustomerData({...newCustomerData, address: e.target.value})}
+                      placeholder="Enter address"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="input-group">
+                  <label>Select Customer</label>
+                  <select
+                    value={selectedCustomerId}
+                    onChange={e => setSelectedCustomerId(e.target.value)}
+                  >
+                    <option value="">-- Walk-in Customer (No Customer) --</option>
+                    {customers.map(customer => (
+                      <option key={customer.id} value={customer.id}>
+                        {customer.name} ({customer.phone})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
             <div className="form-grid">
               {/* Gender Filter */}
               <div className="input-group">
@@ -184,6 +297,54 @@ const Sales = () => {
                 <input required type="number" step="0.01" value={formData.soldRate} onChange={e => setFormData({...formData, soldRate: parseFloat(e.target.value) || 0})} />
               </div>
             </div>
+
+            {/* Payment Section */}
+            {formData.quantitySold > 0 && formData.soldRate > 0 && (
+              <div style={{ marginTop: '20px', padding: '16px', backgroundColor: 'var(--bg-color)', borderRadius: '8px' }}>
+                <h4 style={{ marginBottom: '12px' }}>💰 Payment Details</h4>
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '16px' }}>
+                  Total Amount: Rs {(formData.quantitySold * formData.soldRate).toLocaleString()}
+                </div>
+                
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+                  <button
+                    type="button"
+                    className={`btn ${paymentType === 'full' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => { setPaymentType('full'); setAmountPaid(''); }}
+                  >
+                    Full Payment
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${paymentType === 'partial' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setPaymentType('partial')}
+                  >
+                    Partial Payment (Loan)
+                  </button>
+                </div>
+
+                {paymentType === 'partial' && (
+                  <div className="input-group">
+                    <label>Amount Paid (Rs)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max={formData.quantitySold * formData.soldRate}
+                      value={amountPaid}
+                      onChange={e => setAmountPaid(e.target.value)}
+                      placeholder="Enter amount received"
+                    />
+                    {amountPaid && (
+                      <div style={{ marginTop: '8px', color: 'var(--danger)', fontWeight: 600 }}>
+                        Loan Amount: Rs {((formData.quantitySold * formData.soldRate) - parseFloat(amountPaid || 0)).toLocaleString()}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
               <button type="submit" className="btn btn-primary" disabled={items.length === 0}>
                 {editingSale ? '💾 Update Sale' : '💾 Record Sale'}
@@ -236,12 +397,14 @@ const Sales = () => {
           <thead>
             <tr>
               <th>ID</th>
+              <th>Customer</th>
               <th>Item Name</th>
               <th>Gender</th>
               <th>Type</th>
               <th>Qty Sold</th>
               <th>Sold Rate</th>
               <th>Total Amount</th>
+              <th>Payment</th>
               <th>Date</th>
               <th>Actions</th>
             </tr>
@@ -250,6 +413,13 @@ const Sales = () => {
             {filteredSales.map(sale => (
               <tr key={sale.id}>
                 <td>#{sale.id}</td>
+                <td>
+                  {sale.customer ? (
+                    <span style={{ fontWeight: 500 }}>{sale.customer.name}</span>
+                  ) : (
+                    <span style={{ color: 'var(--text-muted)' }}>Walk-in</span>
+                  )}
+                </td>
                 <td style={{fontWeight: 500}}>{sale.item ? sale.item.name : 'Unknown Item'}</td>
                 <td>{sale.item ? (sale.item.genderCategory === 'Men' ? 'Men' : 'Women') : '-'}</td>
                 <td>
@@ -262,6 +432,15 @@ const Sales = () => {
                 <td>{sale.quantitySold}</td>
                 <td>Rs {sale.soldRate.toLocaleString()}</td>
                 <td style={{color: 'var(--success)', fontWeight: 600}}>Rs {sale.totalSalesAmount.toLocaleString()}</td>
+                <td>
+                  {sale.isLoan ? (
+                    <span className="badge badge-danger">
+                      Loan: Rs {sale.loanAmount?.toLocaleString()}
+                    </span>
+                  ) : (
+                    <span className="badge badge-success">Paid</span>
+                  )}
+                </td>
                 <td>{new Date(sale.saleDate).toLocaleDateString()}</td>
                 <td>
                   <div style={{ display: 'flex', gap: '8px' }}>
@@ -286,7 +465,7 @@ const Sales = () => {
               </tr>
             ))}
             {filteredSales.length === 0 && (
-              <tr><td colSpan="9" style={{textAlign: 'center'}}>No sales match your search or date filter.</td></tr>
+              <tr><td colSpan="11" style={{textAlign: 'center'}}>No sales match your search or date filter.</td></tr>
             )}
           </tbody>
         </table>

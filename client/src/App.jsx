@@ -1,9 +1,12 @@
 import { BrowserRouter as Router, Routes, Route, NavLink, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Store, ShoppingCart, Receipt, LogOut } from 'lucide-react';
+import { LayoutDashboard, Store, ShoppingCart, Receipt, LogOut, Users, DollarSign } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import Sales from './pages/Sales';
 import Expenses from './pages/expenses/Expenses';
+import Customers from './pages/Customers';
+import CustomerDetail from './pages/CustomerDetail';
+import Loans from './pages/Loans';
 import Login from './login/Login';
 import Register from './login/Register';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -56,6 +59,18 @@ const AppContent = () => {
                 Expenses
               </NavLink>
             )}
+            {role === 'Admin' && (
+              <NavLink to="/customers" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
+                <Users size={20} />
+                Customers
+              </NavLink>
+            )}
+            {role === 'Admin' && (
+              <NavLink to="/loans" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
+                <DollarSign size={20} />
+                Loans
+              </NavLink>
+            )}
             <button onClick={logout} className="nav-link" style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', marginTop: 'auto', color: '#ef4444' }}>
               <LogOut size={20} style={{ marginRight: '8px' }} />
               <span style={{ fontSize: '16px', fontWeight: '500' }}>Logout</span>
@@ -70,6 +85,9 @@ const AppContent = () => {
           <Route path="/inventory" element={<ProtectedRoute allowedRoles={['Admin']}><Inventory /></ProtectedRoute>} />
           <Route path="/expenses" element={<ProtectedRoute allowedRoles={['Admin']}><Expenses /></ProtectedRoute>} />
           <Route path="/sales" element={<ProtectedRoute allowedRoles={['Admin', 'Cashier']}><Sales /></ProtectedRoute>} />
+          <Route path="/customers" element={<ProtectedRoute allowedRoles={['Admin']}><Customers /></ProtectedRoute>} />
+          <Route path="/customers/:id" element={<ProtectedRoute allowedRoles={['Admin']}><CustomerDetail /></ProtectedRoute>} />
+          <Route path="/loans" element={<ProtectedRoute allowedRoles={['Admin']}><Loans /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

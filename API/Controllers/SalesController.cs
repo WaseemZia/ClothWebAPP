@@ -27,7 +27,11 @@ namespace API.Controllers
         {
             var item = await _context.Items.FindAsync(sale.ItemId);
             if (item == null) return NotFound("Item not found");
-            
+            if(sale.CustomerId.HasValue)
+            {
+                var customer=await _context.Customers.FindAsync(sale.CustomerId);
+                if(customer==null) return NotFound("Customer not found");
+            }
             decimal totalToDeduct = 0;
             
             // CALCULATE DEDUCTION BASED ON GENDER & TYPE
@@ -63,12 +67,37 @@ namespace API.Controllers
             sale.TotalSalesAmount = sale.QuantitySold * sale.SoldRate;
             sale.SaleDate = DateTime.UtcNow;
             
+            if(sale.AmountPaid<sale.TotalSalesAmount)
+            {
+                sale.IsLoan=true;
+                sale.LoanAmount=sale.TotalSalesAmount-sale.AmountPaid;
+            }
+            else
+            {
+                sale.IsLoan=false;
+                sale.LoanAmount=0;
+            }
             // Deduct stock
             item.RemainingQuantity -= totalToDeduct;
             
             _context.Sales.Add(sale);
             _context.Entry(item).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+            if(sale.IsLoan && sale.CustomerId.HasValue)
+            {
+                var loan = new Loan
+                {
+                 CustomerId=sale.CustomerId.Value,
+                 SaleId=sale.Id,
+                 TotalAmount=sale.TotalSalesAmount,
+                 AmountPaid=sale.AmountPaid,
+                 RemainingBalance=sale.LoanAmount
+                ,Status="Active",
+                DueDate=DateTime.UtcNow
+                };
+                 _context.Loans.Add(loan);
+        await _context.SaveChangesAsync();
+            }
             
             return CreatedAtAction(nameof(GetSales), new { id = sale.Id }, sale);
         }
