@@ -87,11 +87,11 @@ namespace API.Controllers
             {
                 return BadRequest("Loan has been cleared");
             }
-            if(loan.AmountPaid<=0)
+            if(payment.Amount <= 0)
             {
                 return BadRequest("Payment amount must be greater than 0");
             }
-            else if(loan.AmountPaid>loan.RemainingBalance)
+            else if(payment.Amount > loan.RemainingBalance)
             {
                 return BadRequest($"Payment amount cannot exceed remaining balance ({loan.RemainingBalance})");
             }

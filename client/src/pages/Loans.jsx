@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { DollarSign, History } from 'lucide-react';
+import { DollarSign, History, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { generateLoanHistoryReport } from '../utils/generateLoanHistoryReport';
 
 const Loans = () => {
   const navigate = useNavigate();
@@ -167,9 +168,18 @@ const Loans = () => {
       {/* History Modal */}
       {showHistoryModal && historyLoan && (
         <div className="card" style={{ marginBottom: '24px', border: '2px solid var(--primary-color)' }}>
-          <h3 style={{ marginBottom: '16px', color: 'var(--primary-color)' }}>
-            📜 Payment History for {historyLoan.customer?.name}
-          </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h3 style={{ color: 'var(--primary-color)', margin: 0 }}>
+              📜 Payment History for {historyLoan.customer?.name}
+            </h3>
+            <button 
+              className="btn btn-success" 
+              style={{ backgroundColor: 'var(--success)', color: 'white', padding: '6px 12px', fontSize: '0.85rem' }} 
+              onClick={() => generateLoanHistoryReport(historyLoan)}
+            >
+              <Download size={16} style={{ marginRight: '4px', verticalAlign: 'text-bottom' }} /> Download Statement
+            </button>
+          </div>
           <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'var(--bg-color)', borderRadius: '6px' }}>
             <p><strong>Total Loan:</strong> Rs {historyLoan.totalAmount.toLocaleString()}</p>
             <p><strong>Remaining Balance:</strong> <span style={{ color: 'var(--danger)', fontWeight: 'bold' }}>Rs {historyLoan.remainingBalance.toLocaleString()}</span></p>

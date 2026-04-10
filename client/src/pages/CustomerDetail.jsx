@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Download } from 'lucide-react';
+import { generateCustomerReport } from '../utils/generateCustomerReport';
 
 const CustomerDetail = () => {
   const { id } = useParams();
@@ -33,11 +34,19 @@ const CustomerDetail = () => {
 
   return (
     <div>
-      <div className="page-title">
+      <div className="page-title" style={{ display: 'flex', alignItems: 'center' }}>
         <button className="btn btn-secondary" onClick={() => navigate('/customers')} style={{ marginRight: '12px' }}>
           <ArrowLeft size={18} /> Back
         </button>
-        Customer Details: {customer.name}
+        <span>Customer Details: {customer.name}</span>
+        
+        <button 
+          className="btn btn-success" 
+          style={{ marginLeft: 'auto', backgroundColor: 'var(--success)', color: 'white' }} 
+          onClick={() => generateCustomerReport(customer, loans)}
+        >
+          <Download size={18} /> Download Ledger
+        </button>
       </div>
 
       {/* Customer Info Card */}
