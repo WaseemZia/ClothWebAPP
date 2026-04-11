@@ -10,6 +10,7 @@ import Loans from './pages/Loans';
 import Login from './login/Login';
 import Register from './login/Register';
 import ProtectedRoute from './components/ProtectedRoute';
+import SignalRNotifier from './components/SignalRNotifier';
 import { useContext } from 'react';
 import { AuthContext, AuthProvider } from './context/AuthContext';
 
@@ -99,6 +100,7 @@ const App = () => {
   return (
     <AuthProvider>
       <Router>
+        <SignalRNotifier />
         <AppContent />
       </Router>
     </AuthProvider>

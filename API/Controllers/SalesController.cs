@@ -1,6 +1,8 @@
 using API.Data;
+using API.Hubs;
 using API.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers
@@ -10,10 +12,12 @@ namespace API.Controllers
     public class SalesController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IHubContext<StockHub> _stockHub;
 
-        public SalesController(AppDbContext context)
+        public SalesController(AppDbContext context,IHubContext<StockHub> stockHub)
         {
             _context = context;
+            _stockHub=stockHub;
         }
 
         [HttpGet]
@@ -83,8 +87,22 @@ namespace API.Controllers
             // Deduct stock
             item.RemainingQuantity -= totalToDeduct;
             
+            if(item.RemainingQuantity<=5)
+            {
+                bool isOutOfStock=item.RemainingQuantity<=0;
+                string alertMessage=isOutOfStock? $"🚨 Out of Stock: {item.Name} is completely gone!"
+                 : $"⚠️ Low Stock: {item.Name} only has {item.RemainingQuantity} meters left.";
+                 await _stockHub.Clients.All.SendAsync("ReceiveStockAlert",new
+                 {
+                      itemName=item.Name,
+                      message=alertMessage,
+                      isOutOfStock=isOutOfStock
+                 });
+                 
+            }
             _context.Sales.Add(sale);
             _context.Entry(item).State = EntityState.Modified;
+            
             await _context.SaveChangesAsync();
             if(sale.IsLoan && sale.CustomerId.HasValue)
             {
