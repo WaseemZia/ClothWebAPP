@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, NavLink, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Store, ShoppingCart, Receipt, LogOut, Users, DollarSign } from 'lucide-react';
+import { LayoutDashboard, Store, ShoppingCart, Receipt, LogOut, Users, DollarSign, RotateCcw } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import Sales from './pages/Sales';
@@ -7,6 +7,7 @@ import Expenses from './pages/expenses/Expenses';
 import Customers from './pages/Customers';
 import CustomerDetail from './pages/CustomerDetail';
 import Loans from './pages/Loans';
+import SaleReturns from './pages/SaleReturns';
 import Login from './login/Login';
 import Register from './login/Register';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -72,6 +73,11 @@ const AppContent = () => {
                 Loans
               </NavLink>
             )}
+            <NavLink to="/SaleReturns" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
+             <RotateCcw size={20} />
+              Returns
+            </NavLink>
+
             <button onClick={logout} className="nav-link" style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', marginTop: 'auto', color: '#ef4444' }}>
               <LogOut size={20} style={{ marginRight: '8px' }} />
               <span style={{ fontSize: '16px', fontWeight: '500' }}>Logout</span>
@@ -89,6 +95,8 @@ const AppContent = () => {
           <Route path="/customers" element={<ProtectedRoute allowedRoles={['Admin']}><Customers /></ProtectedRoute>} />
           <Route path="/customers/:id" element={<ProtectedRoute allowedRoles={['Admin']}><CustomerDetail /></ProtectedRoute>} />
           <Route path="/loans" element={<ProtectedRoute allowedRoles={['Admin']}><Loans /></ProtectedRoute>} />
+          <Route path="/SaleReturns" element={<ProtectedRoute allowedRoles={['Admin', 'Cashier']}><SaleReturns /></ProtectedRoute>} />
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

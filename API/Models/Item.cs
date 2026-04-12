@@ -20,5 +20,7 @@ namespace API.Models
         // For Women's clothing differentiation
         public string SuitType { get; set; } = "Unstitched"; // "Stitched" or "Unstitched"
         public decimal MetersPerSuit { get; set; } = 0;      // Custom meters (Women only)
+     public ICollection<SaleReturns> SalesReturn{get;set;}=new List<SaleReturns>();
+
     }
 }

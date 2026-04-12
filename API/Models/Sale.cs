@@ -21,5 +21,8 @@ namespace API.Models
         public decimal LoanAmount { get; set; } = 0;
         public bool IsLoan { get; set; } = false;
 
+    public ICollection<SaleReturns> SalesReturn{get;set;}=new List<SaleReturns>();
+
+
     }
 }
