@@ -1,4 +1,4 @@
-const baseURL = 'http://localhost:5034/api';
+const baseURL = 'https://clothwebapp-api.onrender.com/api';
 
 // Helper to get auth headers
 const getAuthHeaders = () => {
