@@ -51,10 +51,16 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// CRITICAL: UseCors must be placed BEFORE UseAuthentication and UseAuthorization!
+app.UseCors("AllowAll");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 // Configure the HTTP request pipeline.
+app.UseDeveloperExceptionPage(); // REMOVE LATER: Added purely to debug Render 500 error
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
