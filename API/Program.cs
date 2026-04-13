@@ -23,8 +23,13 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(opt =>
 {
     // opt.User.RequireUniqueEmail=true;
 }).AddEntityFrameworkStores<AppDbContext>().AddDefaultTokenProviders();
-// Add JWT Authentication
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+// Add JWT Authentication — override the default schemes that AddIdentity set
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+})
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
@@ -67,7 +72,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors("AllowAll");
 app.MapControllers();
 app.MapHub<StockHub>("/stockhub");
 
