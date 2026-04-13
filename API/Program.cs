@@ -84,6 +84,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapControllers();
-app.MapHub<StockHub>("/stockhub");
+// app.MapHub<StockHub>("/stockhub");
 
 app.Run();
