@@ -6,11 +6,9 @@ using System.Text;
 using Microsoft.AspNetCore.Identity;
 using API.Hubs;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// builder.Services.AddControllers();
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
@@ -19,33 +17,47 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 builder.Services.AddSignalR();
-builder.Services.AddIdentity<IdentityUser, IdentityRole>(opt =>
-{
-    // opt.User.RequireUniqueEmail=true;
-}).AddEntityFrameworkStores<AppDbContext>().AddDefaultTokenProviders();
-// Add JWT Authentication — override the default schemes that AddIdentity set
+
+// 1) Database
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// 2) Authentication — set JWT as default FIRST, before Identity touches it
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-    .AddJwtBearer(options =>
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = false,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
-        };
-    });
-    builder.Services.AddAuthorization();
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+        ValidateIssuer = true,
+        ValidateAudience = false,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+    };
+});
 
+// 3) Identity — use AddIdentityCore so it does NOT override the default auth scheme
+builder.Services.AddIdentityCore<IdentityUser>(opt =>
+{
+    opt.Password.RequireDigit = false;
+    opt.Password.RequireNonAlphanumeric = false;
+    opt.Password.RequireUppercase = false;
+    opt.Password.RequiredLength = 4;
+})
+.AddRoles<IdentityRole>()
+.AddEntityFrameworkStores<AppDbContext>()
+.AddDefaultTokenProviders();
+
+builder.Services.AddAuthorization();
+
+// 4) CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
@@ -57,21 +69,26 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// CRITICAL: UseCors must be placed BEFORE UseAuthentication and UseAuthorization!
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
+// Developer exception page FIRST so we can see full errors
+app.UseDeveloperExceptionPage();
+
+// CORS before auth
 app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
-
-// Configure the HTTP request pipeline.
-app.UseDeveloperExceptionPage(); // REMOVE LATER: Added purely to debug Render 500 error
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
 app.MapControllers();
 app.MapHub<StockHub>("/stockhub");
 
